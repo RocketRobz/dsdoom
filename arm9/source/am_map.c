@@ -931,7 +931,7 @@ void AM_drawFline
   register int d;
 
 #ifdef RANGECHECK         // killough 2/22/98
-  static int fuck = 0;
+  static int eff = 0;
 
   // For debugging only
   if
@@ -943,7 +943,7 @@ void AM_drawFline
   )
   {
     //jff 8/3/98 use logical output routine
-    lprintf(LO_DEBUG, "fuck %d \r", fuck++);
+    lprintf(LO_DEBUG, "eff %d \r", eff++);
     return;
   }
 #endif

@@ -50,7 +50,9 @@
 #ifdef GL_DOOM
 #include "gl_struct.h"
 #endif
-
+#include "KipSVN.h"				// Kippykip SVN Vars
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
 
 void R_LoadTrigTables(void);
 
@@ -286,9 +288,12 @@ void R_InitLightTables (void)
       int j, startmap = ((LIGHTLEVELS-1-i)*2)*NUMCOLORMAPS/LIGHTLEVELS;
       for (j=0; j<MAXLIGHTZ; j++)
         {
+		//KipSVN testing somethin
+		//int scale = FixedDiv ((SCREENWIDTH/2*FRACUNIT), (j+1)<<LIGHTZSHIFT);
     // CPhipps - use 320 here instead of SCREENWIDTH, otherwise hires is
+	// NO FUQ OFF WERE MAKIN IT BETR KipSVN
     //           brighter than normal res
-          int scale = FixedDiv ((320/2*FRACUNIT), (j+1)<<LIGHTZSHIFT);
+          int scale = FixedDiv ((KIP_width/2*FRACUNIT), (j+1)<<LIGHTZSHIFT);
           int t, level = startmap - (scale >>= LIGHTSCALESHIFT)/DISTMAP;
 
           if (level < 0)
@@ -357,7 +362,9 @@ void R_ExecuteSetViewSize (void)
   centeryfrac = centery<<FRACBITS;
   projection = centerxfrac;
 // proff 11/06/98: Added for high-res
-  projectiony = ((SCREENHEIGHT * centerx * 320) / 200) / SCREENWIDTH * FRACUNIT;
+	//FIXIN M8 KipSVN
+  projectiony = ((SCREENHEIGHT * centerx * KIP_width) / KIP_height) / SCREENWIDTH * FRACUNIT;
+  //projectiony = ((SCREENHEIGHT * centerx * 320) / 200) / SCREENWIDTH * FRACUNIT;
 
   R_InitBuffer (scaledviewwidth, viewheight);
 
@@ -365,10 +372,17 @@ void R_ExecuteSetViewSize (void)
 
   // psprite scales
 // proff 08/17/98: Changed for high-res
-  pspritescale = FRACUNIT*viewwidth/320;
-  pspriteiscale = FRACUNIT*320/viewwidth;
+
+  //KipSVN testing somethin
+  //pspritescale = FRACUNIT*viewwidth/SCREENWIDTH;
+  //pspriteiscale = FRACUNIT*SCREENWIDTH/viewwidth;
+  //pspriteyscale = (((SCREENHEIGHT*viewwidth)/SCREENWIDTH) << FRACBITS) / SCREENHEIGHT;
+  
+  pspritescale = FRACUNIT*viewwidth/KIP_width;
+  pspriteiscale = FRACUNIT*KIP_width/viewwidth;
+
 // proff 11/06/98: Added for high-res
-  pspriteyscale = (((SCREENHEIGHT*viewwidth)/SCREENWIDTH) << FRACBITS) / 200;
+  pspriteyscale = (((SCREENHEIGHT*viewwidth)/SCREENWIDTH) << FRACBITS) / KIP_height;
 
   // thing clipping
   for (i=0 ; i<viewwidth ; i++)
@@ -400,8 +414,9 @@ void R_Init (void)
 {
   // CPhipps - R_DrawColumn isn't constant anymore, so must
   //  initialise in code
+  //Another fix KipSVN
   colfunc = R_DrawColumn;     // current column draw function
-  if (SCREENWIDTH<320)
+  if (SCREENWIDTH<KIP_width)
     I_Error("R_Init: Screenwidth(%d) < 320",SCREENWIDTH);
   lprintf(LO_INFO, "\nR_LoadTrigTables: ");
   R_LoadTrigTables();

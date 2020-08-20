@@ -67,6 +67,30 @@
 
 #include <fat.h>
 #include <dswifi9.h>
+#include "KipSVN.h"					// KipVN Vars
+char * KIP_iwadChoice;				// KipSVN - Includes the global selected WAD
+char * KIP_version;					// KipSVN - The version that the SVN was based off
+char * KIP_cmdline;					// KipSVN - Command line
+int KIP_width;						// KipSVN - Includes screen width
+int KIP_height;						// KipSVN - Includes screen height
+int KIP_screenmode;					// KipSVN - Includes what sceen to run it in
+const char * KIP_colours_0 = "\x1b[30m"; //Black
+const char * KIP_colours_1 = "\x1b[34m"; //Dark Blue
+const char * KIP_colours_2 = "\x1b[32m"; //Dark Green
+const char * KIP_colours_3 = "\x1b[36m"; //Dark Aqua
+const char * KIP_colours_4 = "\x1b[31m"; //Dark Red
+const char * KIP_colours_5 = "\x1b[35m"; //Purple
+const char * KIP_colours_6 = "\x1b[33m"; //Dark Yellow
+const char * KIP_colours_7 = "\x1b[37m"; //Gray
+const char * KIP_colours_8 = "\x1b[30;1m"; //Dark Gray
+const char * KIP_colours_9 = "\x1b[34;1m"; //Blue
+
+const char * KIP_colours_a = "\x1b[32;1m"; //Green
+const char * KIP_colours_b = "\x1b[36;1m"; //Aqua
+const char * KIP_colours_c = "\x1b[31;1m"; //Red
+const char * KIP_colours_d = "\x1b[35;1m"; //Pink
+const char * KIP_colours_e = "\x1b[33;1m"; //Yellow
+const char * KIP_colours_f = "\x1b[37;1m"; //White
 
 PrintConsole bottomScreen;
 
@@ -412,10 +436,12 @@ void setAutoMap() {
 	vramSetBankC(VRAM_C_SUB_BG);
 
 	REG_BG3CNT_SUB = BG_BMP8_512x512;
-	REG_BG3PA_SUB = (320 * 256)/256; //1 << 8;
+	REG_BG3PA_SUB = KIP_width; //1 << 8;
+	//REG_BG3PA_SUB = (320 * 256)/256; //1 << 8;
 	REG_BG3PB_SUB = 0; // BG SCALING X
 	REG_BG3PC_SUB = 0; // BG SCALING Y
-	REG_BG3PD_SUB = (200*256)/192; // << 8;
+	REG_BG3PD_SUB = 255; // << 8; must be 255 for some reason
+	//REG_BG3PD_SUB = (200*256)/192; // << 8;
 	REG_BG3X_SUB = 0;
 	REG_BG3Y_SUB = 0;
 	dmaFillWords(0,BG_GFX_SUB,128*1024);
@@ -445,7 +471,14 @@ void switchConsole()
 	}
 	else
 	{
-		setAutoMap();
+		if(KIP_screenmode == 0)
+		{
+			setAutoMap();
+		}
+		if(!KIP_screenmode == 2)
+		{
+			gen_console_enable = true;
+		}
 		/**
 		 * adjusted in st_lib.h (static int instead of #define)
 		 * hu_lib.h includes st_lib.h and uses same FG screen[x] identifier
@@ -499,35 +532,69 @@ void systemErrorExit(int rc) {
 static int old_console;
 
 void keyboardStart() {
+	if(KIP_screenmode == 0)
+	{
+		old_console = gen_console_enable;
+		gen_console_enable = 1;
+		REG_DISPCNT_SUB &= ~DISPLAY_BG3_ACTIVE;
+		dmaFillWords(0,BG_GFX_SUB,128*1024);
+		dmaCopy(BG_PALETTE_SUB,BG_MAP_RAM_SUB(28),512);
+	}
+	keyboardInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x512, 29, 1, false, true);
+	if(KIP_screenmode == 0)
+	{
+		BG_PALETTE_SUB[255] = RGB15(31,31,31);
+	}
+	if(KIP_screenmode == 2)
+	{
+		if(old_console==0) consoleInit(&bottomScreen,1, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+		consoleSetWindow(&bottomScreen, 0,0,32,14);
+	}
+	keyboardShow();
+}
+
+void singleScreen() //KipSVN
+{
 	old_console = gen_console_enable;
 	gen_console_enable = 1;
 	REG_DISPCNT_SUB &= ~DISPLAY_BG3_ACTIVE;
 	dmaFillWords(0,BG_GFX_SUB,128*1024);
 	dmaCopy(BG_PALETTE_SUB,BG_MAP_RAM_SUB(28),512);
-	keyboardInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x512, 29, 1, false, true);
 	BG_PALETTE_SUB[255] = RGB15(31,31,31);
-	if(old_console==0) consoleInit(&bottomScreen,1, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
-	consoleSetWindow(&bottomScreen, 0,0,32,14);
-	keyboardShow();
+	if(KIP_screenmode == 2)
+	{
+		if(old_console==0) consoleInit(&bottomScreen,1, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+		consoleSetWindow(&bottomScreen, 0,0,32,14);
+	}
 }
 
-void keyboardEnd() {
+void keyboardEnd() { 
 	keyboardHide();
-	gen_console_enable = old_console;
-	if (gen_console_enable == 0) {
-		dmaCopy(BG_MAP_RAM_SUB(28),BG_PALETTE_SUB,512);
-		setAutoMap();
+	if(KIP_screenmode == 0)
+	{
+		gen_console_enable = old_console;
+		if (gen_console_enable == 0) {
+			dmaCopy(BG_MAP_RAM_SUB(28),BG_PALETTE_SUB,512);
+			setAutoMap();
+			I_FinishUpdate();
+		} else consoleSetWindow(&bottomScreen, 0,0,32,24);
+	}else
+	{
 		I_FinishUpdate();
-	} else consoleSetWindow(&bottomScreen, 0,0,32,24);
+	}
 
 }
 
 //int main(int argc, const char * const * argv)
 int main(int argc, char **argv)
 {
+	KIP_version = VER_DSDOOM;				// KipSVN - Set the version
+	KIP_width = 256;					// KipSVN - Set the width
+	KIP_height = 192;					// KipSVN - Set the height
+	KIP_screenmode = 0; 				// KipSVN - Set whether to run in consolemode or singlescreen etc
+	KIP_iwadChoice = "DOOM1.WAD";		// KipSVN - Set the default IWAD
 	myargc = argc;
 	myargv = argv;
-
 	powerOn(POWER_ALL);
 	soundEnable();
 	defaultExceptionHandler();
@@ -545,10 +612,14 @@ int main(int argc, char **argv)
 	vramSetBankB(VRAM_B_MAIN_BG_0x06020000);		// use second bank for main screen - 256 KiB
 
 	REG_BG3CNT = BG_BMP8_512x512;					// BG3 Control register, 8 bits
-    REG_BG3PA = (320 * 256)/256; //1 << 8;
+	//KipSVN
+    REG_BG3PA = KIP_width; //1 << 8;
+    //REG_BG3PA = (KIP_width * 256)/256; //1 << 8;
     REG_BG3PB = 0; // BG SCALING X
     REG_BG3PC = 0; // BG SCALING Y
-    REG_BG3PD = (200*256)/192; // << 8;
+    REG_BG3PD = 255; // << 8; must be 255 for some reason or it crops
+	
+	//REG_BG3PD = (KIP_height*256)/192; // << 8;
     REG_BG3X = 0;
     REG_BG3Y = 0;
 
@@ -559,37 +630,611 @@ int main(int argc, char **argv)
 	DSgetUserName();	// essential, retrieves username via Fifo buffer.
 
 	consoleClear();
-	iprintf("Welcome %s!\nThis is DS DOOM Build %s\n\n", DS_USERNAME, VER_DSDOOM);
-	iprintf("prBoom ported by\nTheChuckster & WinterMute\n");
-	iprintf("updated by happy_bunny for latest tools/libs.\n");
+	//Build %s\n\n", DS_USERNAME, VER_DSDOOM);
+	iprintf("Welcome %s!\n\n" , DS_USERNAME);
+	//iprintf("This is DSDOOM SVN Version: %s\n", KIP_version);
+	//iprintf("Based of DSDOOM Build %s\n\n", VER_DSDOOM);
+	/*iprintf("This is DSDOOM SVN Version: %s\n", VER_DSDOOM);
+	iprintf("Based of DSDOOM Build 1.2.1\n\n");
+	iprintf("prBoom ported by:\nTheChuckster & WinterMute\n");
+	iprintf("Updated by happy_bunny for latest tools/libs.\n");
 	iprintf("some additions by JefKlak\n");
+	iprintf("SVN by Kippykip and elhobbs\n\n");
 	if (!fatInitDefault())
 	{
 		iprintf("Unable to initialize media device!\n");
 	} else {
 		iprintf("fatInitDefault(): initialized.\n");
+	}*/
+	//Make this BETR
+	if (!fatInitDefault())
+	{
+		iprintf("Unable to Read/Write! Halted");
+		while(true){}
+	} else 
+	{
+		iprintf("Read/Write access!\n\n");
 	}
-
-	iprintf("\x1b[10;0HChoose your game type\n\n");
-	iprintf("      Standard game\n      Network game");
+	//KipSVN 1.4 - There is an entire new menu now so...
+	/*iprintf("    Choose your game type\n\n");
+	iprintf("         Standard game\n         Network game");
 	
-	int line = 12;
+	int line = 16;
 	while(1) {
-		iprintf("\x1b[%d;4H]\x1b[15C[",line);
+		iprintf("\x1b[%d;7H]\x1b[15C[",line);
 		swiWaitForVBlank();
 		scanKeys();
 		int keys = keysDown();
-		iprintf("\x1b[%d;4H \x1b[15C ",line);
-		if ( (keys & KEY_UP) && line == 13 ) line = 12;
-		if ( (keys & KEY_DOWN) && line == 12 ) line = 13;
-		if ( keys & KEY_A ) break;
+		iprintf("\x1b[%d;7H \x1b[15C ",line);
+		if ((keys & KEY_UP) && line > 16)
+		{
+			line--;
+		}
+		if ((keys & KEY_DOWN) && line < 17)
+		{
+			line++;
+		}
+		if ( keys & KEY_A )
+		{
+			if(line == 16)
+			{
+				netgame = false;
+			}else
+			{
+				netgame = true;
+			}
+			break;
+		}
+	}
+	//New WAD Chooser - KipSVN
+	consoleClear();
+	//while(1){}
+	
+	
+	line = 8;
+	iprintf("\x1b[0;8HChoose IWAD\n\n");
+	iprintf("\x1b[8;0H          Doom1.wad\n          Doom.wad\n          Doom2.wad\n          Plutonia.wad\n          Tnt.wad\n          Custom");
+	while(1) 
+	{
+		iprintf("\x1b[%d;7H]\x1b[15C[",line);
+		swiWaitForVBlank();
+		scanKeys();
+		int keys = keysDown();
+		iprintf("\x1b[%d;7H \x1b[15C ",line);
+		//if ( (keys & KEY_UP) && line == 13 ) line = 12;
+		//if ( (keys & KEY_DOWN) && line == 12 ) line = 13;
+		if ((keys & KEY_UP) && line > 8)
+		{
+			line--;
+		}
+		if ((keys & KEY_DOWN) && line < 12)
+		{
+			line++;
+		}
+		if ( keys & KEY_A )
+		{
+			if(line == 8)
+			{
+				KIP_iwadChoice = "doom1.wad";
+			}
+			if(line == 9)
+			{
+				KIP_iwadChoice = "doom.wad";
+			}
+			if(line == 10)
+			{
+				KIP_iwadChoice = "doom2.wad";
+			}
+			if(line == 11)
+			{
+				KIP_iwadChoice = "plutonia.wad";
+			}
+			if(line == 12)
+			{
+				KIP_iwadChoice = "tnt.wad";
+			}
+			break;
+		}
+	}*/
+	consoleClear();
+	//KipSVN The new menu - it's a bit messy but it does the job
+	int K_currentMenu = 0; //0 is the main screen, 1 is the Game Type, 2 is screenmode, 3 is IWAD, 4 is Custom IWAD, 5 is Command Line, 6 is About
+	int K_currentCursor = 5;
+	while(1) 
+	{
+		//Lets get the Keys!
+		swiWaitForVBlank();
+		scanKeys();
+		int keys = keysDown();
+		
+		if(K_currentMenu == 0) //Main menu
+		{
+			//Text stuff	
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 0, 11, KIP_colours_e, "DSDoom Menu");
+			
+			//Netgame Text
+			if(netgame)
+			{
+				iprintf("\x1b[%d;%dH%s%s%s%s\x1b[37;1m", 6, 5, KIP_colours_a, "Game Type:  ", KIP_colours_b ,"Multiplayer");
+			}else
+			{
+				iprintf("\x1b[%d;%dH%s%s%s%s\x1b[37;1m", 6, 5, KIP_colours_a, "Game Type: ", KIP_colours_b ,"Singleplayer");
+			}
+			
+			//Screenmode Text
+			if(KIP_screenmode == 0)
+			{
+				iprintf("\x1b[%d;%dH%s%s%s%s\x1b[37;1m", 7, 6, KIP_colours_a, "Screen Mode:    ", KIP_colours_b, "Dual");
+			}
+			if(KIP_screenmode == 1)
+			{
+				iprintf("\x1b[%d;%dH%s%s%s%s\x1b[37;1m", 7, 6, KIP_colours_a, "Screen Mode:  ", KIP_colours_b, "Single");
+			}
+			if(KIP_screenmode == 2)
+			{
+				iprintf("\x1b[%d;%dH%s%s%s%s\x1b[37;1m", 7, 6, KIP_colours_a, "Screen Mode: ", KIP_colours_b, "Console");
+			}
+			
+			//IWAD Text
+			iprintf("\x1b[%d;%dH%s%s%s%s\x1b[37;1m", 8, 7, KIP_colours_a, "IWAD: ", KIP_colours_b, KIP_iwadChoice);
+			
+			//CMDLine Text
+			iprintf("\x1b[%d;%dH%s%s%s%s\x1b[37;1m", 9, 2, KIP_colours_a, "Cmd Line: ", KIP_colours_b, KIP_cmdline);
+			
+			//About
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 10, 13, KIP_colours_a, "About");
+			
+			//START THE DAMN GAME ALREADY!
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 12, 10, KIP_colours_c, "Start DSDoom");
+			
+			//Cursor stuff
+			if(keys & KEY_DOWN && K_currentCursor < 5) //Move the cursor down unless its greater than...
+			{
+				K_currentCursor++;
+				consoleClear();
+			}
+			if(keys & KEY_UP && K_currentCursor > 0) //Move the cursor up unless it's 0
+			{
+				K_currentCursor--;
+				consoleClear();
+			}
+			if(K_currentCursor == 0) //Game Type cursor
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 3, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 29, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					K_currentMenu = 1; //Set the menu to Game Type
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+				}
+			}
+			
+			if(K_currentCursor == 1) //Screen mode cursor
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 4, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 27, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					K_currentMenu = 2; //Set the menu to screenmode
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+				}
+			}
+			
+			if(K_currentCursor == 2) //IWAD cursor
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 8, 5, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 8, 26, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					K_currentMenu = 3; //Set the menu to IWAD
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+				}
+			}
+			if(K_currentCursor == 3) //CmdLine cursor
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 9, 0, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 9, 31, "]"); //Why 32 when you can go 31
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					K_currentMenu = 5; //Set the menu to CmdLine
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					//keyboardStart(); //Show the keyboard
+					consoleClear();
+				}
+			}
+			
+			if(K_currentCursor == 4) //About cursor
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 10, 11, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 10, 19, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					K_currentMenu = 6; //Set the menu to About
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+				}
+			}
+			
+			if(K_currentCursor == 5) //START DA GAEM
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 12, 8, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 12, 23, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					break; //Stop the loop
+				}
+			}
+			
+			if(keys & KEY_START) //Start the game
+			{
+				K_currentCursor = 0;
+				scanKeys(); //Reset the keys!
+				keys = keysDown();
+				consoleClear();
+				break; //Stop the loop
+			}
+		}
+		
+		if(K_currentMenu == 1) //Game Type menu
+		{
+			//Text stuff
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 0, 12, KIP_colours_e, "Game Type");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 6, 11, KIP_colours_a, "Singleplayer");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 7, 11, KIP_colours_a, "Multiplayer");
+			
+			//Cursor stuff
+			if(keys & KEY_DOWN && K_currentCursor < 1) //Move the cursor down unless its greater than...
+			{
+				K_currentCursor++;
+				consoleClear();
+			}
+			if(keys & KEY_UP && K_currentCursor > 0) //Move the cursor up unless it's 0
+			{
+				K_currentCursor--;
+				consoleClear();
+			}
+			if(K_currentCursor == 0)
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 9, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 24, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					netgame = false; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 1)
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 9, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 23, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 0;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					netgame = true; //Set the Vars!
+				}
+			}
+			
+			if(keys & KEY_B) //Lets go back if B is pressed
+			{
+				K_currentCursor = 0;
+				K_currentMenu = 0; //Go back to the first menu
+				scanKeys(); //Reset the keys!
+				keys = keysDown();
+				consoleClear();
+			}
+		}
+		
+		if(K_currentMenu == 2) //Screen Mode menu
+		{
+			//Text stuff
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 0, 11, KIP_colours_e, "Screen Mode");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 6, 14, KIP_colours_a, "Dual");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 7, 13, KIP_colours_a, "Single");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 8, 13, KIP_colours_a, "Console");
+			
+			//Cursor stuff
+			if(keys & KEY_DOWN && K_currentCursor < 2) //Move the cursor down unless its greater than...
+			{
+				K_currentCursor++;
+				consoleClear();
+			}
+			if(keys & KEY_UP && K_currentCursor > 0) //Move the cursor up unless it's 0
+			{
+				K_currentCursor--;
+				consoleClear();
+			}
+			if(K_currentCursor == 0)
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 12, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 19, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 1;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_screenmode = 0; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 1)
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 11, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 20, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 1;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_screenmode = 1; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 2)
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 8, 11, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 8, 21, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 1;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_screenmode = 2; //Set the Vars!
+				}
+			}
+			
+			if(keys & KEY_B) //Lets go back if B is pressed
+			{
+				K_currentCursor = 1;
+				K_currentMenu = 0; //Go back to the first menu
+				scanKeys(); //Reset the keys!
+				keys = keysDown();
+				consoleClear();
+			}
+		}
+		
+		if(K_currentMenu == 3) //IWAD menu
+		{
+			//Text stuff
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 0, 11, KIP_colours_e, "Select IWAD");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 6, 12, KIP_colours_a, "DOOM1.WAD");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 7, 12, KIP_colours_a, "DOOM.WAD");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 8, 12, KIP_colours_a, "DOOM2.WAD");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 9, 11, KIP_colours_a, "PLUTONIA.WAD");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 10, 13, KIP_colours_a, "TNT.WAD");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 11, 13, KIP_colours_a, "Custom");
+			
+			//Cursor stuff
+			if(keys & KEY_DOWN && K_currentCursor < 5) //Move the cursor down unless its greater than...
+			{
+				K_currentCursor++;
+				consoleClear();
+			}
+			if(keys & KEY_UP && K_currentCursor > 0) //Move the cursor up unless it's 0
+			{
+				K_currentCursor--;
+				consoleClear();
+			}
+			if(K_currentCursor == 0) //Doom1.wad
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 10, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 6, 22, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 2;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_iwadChoice = "DOOM1.WAD"; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 1) //Doom.wad
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 10, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 7, 21, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 2;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_iwadChoice = "DOOM.WAD"; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 2) //Doom2.wad
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 8, 10, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 8, 22, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 2;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_iwadChoice = "DOOM2.WAD"; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 3) //Plutonia.wad
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 9, 9, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 9, 24, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 2;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_iwadChoice = "PLUTONIA.WAD"; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 4) //Tnt.wad
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 10, 11, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 10, 21, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 2;
+					K_currentMenu = 0; //Go back to the first menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+					KIP_iwadChoice = "TNT.WAD"; //Set the Vars!
+				}
+			}
+			
+			if(K_currentCursor == 5) //Custom
+			{
+				//Draw the cursor
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 11, 11, "[");
+				iprintf("\x1b[%d;%dH%s\x1b[37;1m", 11, 20, "]");
+				//If you press A...
+				if(keys & KEY_A)
+				{
+					K_currentCursor = 2;
+					K_currentMenu = 4; //Go back to the next menu
+					scanKeys(); //Reset the keys!
+					keys = keysDown();
+					consoleClear();
+				}
+			}
+			
+			if(keys & KEY_B) //Lets go back if B is pressed
+			{
+				K_currentCursor = 2;
+				K_currentMenu = 0; //Go back to the first menu
+				scanKeys(); //Reset the keys!
+				keys = keysDown();
+				consoleClear();
+			}
+		}
+		
+		if(K_currentMenu == 4) //Custom IWAD menu
+		{
+			//Text stuff
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 0, 8, KIP_colours_c, "WORK IN PROGESS!");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 6, 6, KIP_colours_4, "Press 'B' to go back");
+			
+			if(keys & KEY_B) //Lets go back if B is pressed
+			{
+				K_currentCursor = 5;
+				K_currentMenu = 3; //Go back to the IWAD menu
+				scanKeys(); //Reset the keys!
+				keys = keysDown();
+				consoleClear();
+			}
+		}
+		
+		if(K_currentMenu == 5) //CMDLine menu
+		{
+			//Text stuff
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 0, 8, KIP_colours_c, "WORK IN PROGESS!");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 6, 6, KIP_colours_4, "Press 'B' to go back");
+			if(keys & KEY_B) //Lets go back if B is pressed
+			{
+				K_currentCursor = 3;
+				K_currentMenu = 0; //Go back to the menu
+				scanKeys(); //Reset the keys!
+				keys = keysDown();
+				//keyboardEnd();
+				consoleClear();
+			}
+		}
+		if(K_currentMenu == 6) //About menu
+		{
+			//Text stuff
+			consoleClear();
+			iprintf("%sThis is DSDOOM SVN Version: %s\n", KIP_colours_e, VER_DSDOOM);
+			iprintf("Based of DSDOOM Build 1.2.1\n\n");
+			iprintf("prBoom ported by:\nTheChuckster & WinterMute\n");
+			iprintf("Updated by happy_bunny for latest tools/libs.\n");
+			iprintf("some additions by JefKlak\n");
+			iprintf("SVN by Kippykip and elhobbs\n\n");
+			iprintf("\x1b[%d;%dH%s%s\x1b[37;1m", 12, 6, KIP_colours_c, "Press 'B' to go back");
+			if(keys & KEY_B) //Lets go back if a button is pressed
+			{
+				K_currentCursor = 4;
+				K_currentMenu = 0; //Go back to the menu
+				scanKeys(); //Reset the keys!
+				keys = keysDown();
+				//keyboardEnd();
+				consoleClear();
+			}
+		}
 	}
 	
-	if (line == 13 )
-	  netgame = true;
-	else
-	  netgame = false;
-
+	
+	
   /* Version info */
   lprintf(LO_INFO,"\n");
   PrintVer();
@@ -630,6 +1275,6 @@ int main(int argc, char **argv)
 */
   /* cphipps - call to video specific startup code */
   I_PreInitGraphics();
-  D_DoomMain ();
+  D_DoomMain();
   return 0;
 }

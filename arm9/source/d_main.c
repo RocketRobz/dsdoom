@@ -80,6 +80,11 @@
 #include "d_deh.h"  // Ty 04/08/98 - Externalizations
 #include "lprintf.h"  // jff 08/03/98 - declaration of lprintf
 #include "am_map.h"
+#include "KipSVN.h"				// Kippykip SVN Vars
+char * KIP_iwadChoice;			// KipSVN - Includes the global selected WAD
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
+
 #ifdef GL_DOOM
 #include "gl_struct.h"
 #endif
@@ -320,13 +325,14 @@ void D_Display (void)
       if (!x) { // Cache results of x pos calc
   int lump = W_GetNumForName("M_PAUSE");
   const patch_t* p = W_CacheLumpNum(lump);
-  x = (320 - SHORT(p->width))/2;
+  x = (KIP_width - SHORT(p->width))/2;
+  //x = (320 - SHORT(p->width))/2;
   W_UnlockLumpNum(lump);
       }
 
       // CPhipps - updated for new patch drawing
       V_DrawNamePatch(x, (!(automapmode & am_active) || (automapmode & am_overlay))
-          ? 4+(viewwindowy*200/SCREENHEIGHT) : 4, // cph - Must un-stretch viewwindowy
+          ? 4+(viewwindowy*KIP_height/SCREENHEIGHT) : 4, // cph - Must un-stretch viewwindowy
           0, "M_PAUSE", CR_DEFAULT, VPT_STRETCH);
   }
   
@@ -382,10 +388,8 @@ static void D_DoomLoop(void)
 #ifdef WIFI_DEBUG
       user_debugger_update();
 #endif
-
       // frame syncronous IO operations
       I_StartFrame ();
-
       if (ffmap == gamemap) ffmap = 0;
 
       // process one or more tics
@@ -420,7 +424,6 @@ static void D_DoomLoop(void)
       // killough 3/16/98: change consoleplayer to displayplayer
       if (players[displayplayer].mo) // cph 2002/08/10
 	S_UpdateSounds(players[displayplayer].mo);// move positional sounds
-	
     // Update display, next frame, with current state.
     D_Display();
 	/*
@@ -430,6 +433,7 @@ static void D_DoomLoop(void)
   M_DoScreenShot(auto_shot_fname);
       }*/
     }
+
     }
 }
 
@@ -799,18 +803,23 @@ boolean WadFileStatus(char *filename,boolean *isdir)
  * CPhipps  - static, proper prototype
  *    - 12/1999 - rewritten to use FindWADFile
  */
+char * iwadChoice;			//KipSVN - Includes the global selected WAD
 static char *FindIWADFile(void)
 {
   int   i;
   char  * iwad  = NULL;
 
-  i = M_CheckParm("-iwad");
+  /*i = M_CheckParm("-iwad");
   if (i && (++i < myargc)) {
     iwad = I_FindFile(myargv[i], ".wad");
   } else {
     for (i=0; !iwad && i<nstandard_iwads; i++)
       iwad = I_FindFile(standard_iwads[i], ".wad");
-  }
+  }*/
+  
+  //char * iwadChoice;
+  //iwadChoice = "doom";
+  iwad = I_FindFile(KIP_iwadChoice, "");
   return iwad;
 }
 

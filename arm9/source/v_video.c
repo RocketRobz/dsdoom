@@ -41,6 +41,9 @@
 #include "v_video.h"
 #include "i_video.h"
 #include "lprintf.h"
+#include "KipSVN.h"				// Kippykip SVN Vars
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
 
 // Each screen is [SCREENWIDTH*SCREENHEIGHT];
 byte *screens[6];
@@ -115,7 +118,14 @@ void V_CopyRect(int srcx, int srcy, int srcscrn, int width,
 
   if (flags & VPT_STRETCH)
   {
-    srcx=srcx*SCREENWIDTH/320;
+    //KipSVN fixing again
+    //srcx=srcx*SCREENWIDTH/KIP_width;
+    //srcy=srcy*SCREENHEIGHT/KIP_height;
+    //width=width*SCREENWIDTH/KIP_width;
+    //height=height*SCREENHEIGHT/KIP_height;
+    //destx=destx*SCREENWIDTH/KIP_width;
+    //desty=desty*SCREENHEIGHT/KIP_height;
+	srcx=srcx*SCREENWIDTH/320;
     srcy=srcy*SCREENHEIGHT/200;
     width=width*SCREENWIDTH/320;
     height=height*SCREENHEIGHT/200;
@@ -227,17 +237,21 @@ void V_DrawMemPatch(int x, int y, int scrn, const patch_t *patch, int cm, enum p
 
   // CPhipps - auto-no-stretch if not high-res
   if (flags & VPT_STRETCH)
-    if ((SCREENWIDTH==320) && (SCREENHEIGHT==200))
+    //KipSVN More fixing
+    //if ((SCREENWIDTH==KIP_width) && (SCREENHEIGHT==KIP_height))
+	if ((SCREENWIDTH==320) && (SCREENHEIGHT==200))
       flags &= ~VPT_STRETCH;
 
   // CPhipps - null translation pointer => no translation
   if (!trans)
     flags &= ~VPT_TRANS;
-
+	//KipSVN and here...
   if (x<0
       ||x+SHORT(patch->width) > ((flags & VPT_STRETCH) ? 320 : SCREENWIDTH)
+	  //||x+SHORT(patch->width) > ((flags & VPT_STRETCH) ? KIP_width : SCREENWIDTH)
       || y<0
-      || y+SHORT(patch->height) > ((flags & VPT_STRETCH) ? 200 :  SCREENHEIGHT))
+	  || y+SHORT(patch->height) > ((flags & VPT_STRETCH) ? 200 :  SCREENHEIGHT))
+      //|| y+SHORT(patch->height) > ((flags & VPT_STRETCH) ? KIP_height :  SCREENHEIGHT))
     // killough 1/19/98: improved error message:
     I_Error("V_DrawMemPatch: Patch (%d,%d)-(%d,%d) exceeds LFB"
             "Bad V_DrawMemPatch (flags=%u)\n", x, y, x+SHORT(patch->width), y+SHORT(patch->height), flags);
@@ -319,14 +333,19 @@ void V_DrawMemPatch(int x, int y, int scrn, const patch_t *patch, int cm, enum p
     // CPhipps - move stretched patch drawing code here
     //         - reformat initialisers, move variables into inner blocks
 
+	//KipSVN and here...
     byte *desttop;
     int   col;
     int   w = (SHORT( patch->width ) << 16) - 1; // CPhipps - -1 for faster flipping
     int   stretchx, stretchy;
     int   DX  = (SCREENWIDTH<<16)  / 320;
+	//int   DX  = (SCREENWIDTH<<16)  / KIP_width;
     int   DXI = (320<<16)          / SCREENWIDTH;
+	//int   DXI = (KIP_width<<16)          / SCREENWIDTH;
     int   DY  = (SCREENHEIGHT<<16) / 200;
+	//int   DY  = (SCREENHEIGHT<<16) / KIP_height;
     register int DYI = (200<<16)   / SCREENHEIGHT;
+    //register int DYI = (KIP_height<<16)   / SCREENHEIGHT;
     int   DY2, DYI2;
 
     stretchx = ( x * DX ) >> 16;

@@ -54,6 +54,9 @@
 #include "r_sky.h"
 #include "r_plane.h"
 #include "lprintf.h"
+#include "KipSVN.h"				// Kippykip SVN Vars
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
 
 #define MAXVISPLANES 128    /* must be a power of 2 */
 
@@ -384,7 +387,10 @@ static void R_DoDrawPlane(visplane_t *pl)
       //dc_texturemid = skytexturemid;
       dc_texheight = textureheight[skytexture]>>FRACBITS; // killough
       // proff 09/21/98: Changed for high-res
-      dc_iscale = FRACUNIT*200/viewheight;
+	  //KipSVN
+      dc_iscale = FRACUNIT*192/viewheight;
+	  //dc_iscale = FRACUNIT*200/viewheight;
+
 
   // killough 10/98: Use sky scrolling offset, and possibly flip picture
         for (x = pl->minx; (dc_x = x) <= pl->maxx; x++)

@@ -37,7 +37,6 @@
 int    myargc;
 const char * const * myargv; // CPhipps - not sure if ANSI C allows you to
 // modify contents of argv, but I can't imagine it does.
-
 //
 // M_CheckParm
 // Checks for the given parameter

@@ -36,14 +36,14 @@
 
 #include "doomtype.h"
 #include "d_event.h"
-
+#include "KipSVN.h"				// Kippykip SVN Vars
 // Size of statusbar.
 // Now sensitive for scaling.
 
 // proff 08/18/98: Changed for high-res
-#define ST_HEIGHT 32
+#define ST_HEIGHT 33
 #define ST_WIDTH  320
-#define ST_Y      (200 - ST_HEIGHT)
+#define ST_Y      (200 - 34 + 2)
 #define ST_SCALED_HEIGHT (ST_HEIGHT*SCREENHEIGHT/200)
 #define ST_SCALED_WIDTH  SCREENWIDTH
 #define ST_SCALED_Y      (SCREENHEIGHT - ST_SCALED_HEIGHT)

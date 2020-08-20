@@ -67,12 +67,12 @@ const char *const endmsg[]=
 //
 // Following messages commented out for now. Bad taste.   // phares
 
-//  "fuck you, pussy!\nget the fuck out!",
+//  "eff you, pussy!\nget the eff out!",
 //  "you quit and i'll jizz\nin your cystholes!",
 //  "if you leave, i'll make\nthe lord drink my jizz.",
-//  "hey, ron! can we say\n'fuck' in the game?",
+//  "hey, ron! can we say\n'eff' in the game?",
 //  "i'd leave: this is just\nmore monsters and levels.\nwhat a load.",
-//  "suck it down, asshole!\nyou're a fucking wimp!",
+//  "suck it down, asshole!\nyou're a effing wimp!",
 //  "don't quit now! we're \nstill spending your money!",
 
   // Internal debug. Different style, too.

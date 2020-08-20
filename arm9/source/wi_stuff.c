@@ -474,7 +474,6 @@ void WI_drawEL(void)
 {
   int y = WI_TITLEY;
   char lname[9];
-
   /* cph - get the graphic lump name */
   WI_levelNameLump(wbs->epsd, wbs->next, lname);
 
@@ -830,7 +829,6 @@ void WI_initNoState(void)
 // Returns: void
 //
 // cph - pulled from WI_drawStats below
-
 static void WI_drawTimeStats(int cnt_time, int cnt_total_time, int cnt_par)
 {
   V_DrawNamePatch(SP_TIMEX, SP_TIMEY, FB, time1, CR_DEFAULT, VPT_STRETCH);
@@ -1704,7 +1702,6 @@ void WI_drawStats(void)
   WI_drawAnimatedBack();
 
   WI_drawLF();
-
   V_DrawNamePatch(SP_STATSX, SP_STATSY, FB, kills, CR_DEFAULT, VPT_STRETCH);
   WI_drawPercent(320 - SP_STATSX, SP_STATSY, cnt_kills[0]);
 

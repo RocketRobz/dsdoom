@@ -41,6 +41,9 @@
 #include "sounds.h"
 #include "d_deh.h"   /* Ty 03/27/98 - externalization of mapnamesx arrays */
 #include "g_game.h"
+#include "KipSVN.h"				// Kippykip SVN Vars
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
 
 // global heads up display controls
 
@@ -111,8 +114,8 @@ static char       chat_dest[MAXPLAYERS];
 boolean           chat_on;
 static boolean    message_on;
 static boolean    message_list; //2/26/98 enable showing list of messages
-boolean           message_dontfuckwithme;
-static boolean    message_nottobefuckedwith;
+boolean           message_donteffwithme;
+static boolean    message_nottobeeffedwith;
 static int        message_counter;
 extern int        showMessages;
 extern boolean    automapactive;
@@ -333,8 +336,8 @@ void HU_Start(void)
 
   plr = &players[displayplayer];        // killough 3/7/98
   message_on = false;
-  message_dontfuckwithme = false;
-  message_nottobefuckedwith = false;
+  message_donteffwithme = false;
+  message_nottobeeffedwith = false;
   chat_on = false;
 
   // create the message widget
@@ -466,7 +469,9 @@ void HU_Start(void)
     &w_rtext,
     0,
     0,
-    320,
+	//KipSVN
+	KIP_width,
+    //320,
 //    SCREENWIDTH,
     (hud_msg_lines+2)*HU_REFRESHSPACING,
     hu_font,
@@ -1237,7 +1242,7 @@ void HU_Ticker(void)
   if (message_counter && !--message_counter)
   {
     message_on = false;
-    message_nottobefuckedwith = false;
+    message_nottobeeffedwith = false;
   }
   if (bsdown && bscounter++ > 9) {
     HUlib_keyInIText(&w_chat, (unsigned char)key_backspace);
@@ -1246,11 +1251,11 @@ void HU_Ticker(void)
 
   // if messages on, or "Messages Off" is being displayed
   // this allows the notification of turning messages off to be seen
-  if (showMessages || message_dontfuckwithme)
+  if (showMessages || message_donteffwithme)
   {
     // display message if necessary
-    if ((plr->message && !message_nottobefuckedwith)
-        || (plr->message && message_dontfuckwithme))
+    if ((plr->message && !message_nottobeeffedwith)
+        || (plr->message && message_donteffwithme))
     {
       //post the message to the message widget
       HUlib_addMessageToSText(&w_message, 0, plr->message);
@@ -1264,9 +1269,9 @@ void HU_Ticker(void)
       // start the message persistence counter
       message_counter = HU_MSGTIMEOUT;
       // transfer "Messages Off" exception to the "being displayed" variable
-      message_nottobefuckedwith = message_dontfuckwithme;
+      message_nottobeeffedwith = message_donteffwithme;
       // clear the flag that "Messages Off" is being posted
-      message_dontfuckwithme = 0;
+      message_donteffwithme = 0;
     }
   }
 
@@ -1297,7 +1302,7 @@ void HU_Ticker(void)
                                       player_names[i],
                                       w_inputbuffer[i].l.l);
 
-              message_nottobefuckedwith = true;
+              message_nottobeeffedwith = true;
               message_on = true;
               message_counter = HU_MSGTIMEOUT;
               if ( gamemode == commercial )

@@ -58,9 +58,12 @@
 #include "i_video.h"
 #include "d_deh.h"
 #include "m_cheat.h" // Jefklak 21/11/06
+#include "KipSVN.h"				// Kippykip SVN Vars
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
 
 extern patchnum_t hu_font[HU_FONTSIZE];
-extern boolean  message_dontfuckwithme;
+extern boolean  message_donteffwithme;
 
 extern boolean chat_on;          // in heads-up code
 extern int     hud_active;       // in heads-up code
@@ -1504,7 +1507,7 @@ void M_ChangeMessages(int choice)
   else
     players[consoleplayer].message = s_MSGON ; // Ty 03/27/98 - externalized
 
-  message_dontfuckwithme = true;
+  message_donteffwithme = true;
 }
 
 // Jefklak 20/11/06 - allow user to switch screens in options menu
@@ -2108,8 +2111,11 @@ void M_DrawSetting(const setup_menu_t* s)
 
       // Now draw the cursor
       // proff 12/6/98: Drawing of cursor changed for hi-res
-      V_FillRect(0, ((x+cursor_start-1)*SCREENWIDTH)/320, (y*SCREENHEIGHT)/200,
-      (char_width*SCREENWIDTH)/320, 9*SCREENHEIGHT/200, PAL_WHITE);
+	  //KipSVN
+      V_FillRect(0, ((x+cursor_start-1)*SCREENWIDTH)/KIP_width, (y*SCREENHEIGHT)/KIP_height,
+      (char_width*SCREENWIDTH)/KIP_width, 9*SCREENHEIGHT/KIP_height, PAL_WHITE);
+	  //V_FillRect(0, ((x+cursor_start-1)*SCREENWIDTH)/320, (y*SCREENHEIGHT)/200,
+      //(char_width*SCREENWIDTH)/320, 9*SCREENHEIGHT/200, PAL_WHITE);
     }
 
     // Draw the setting for the item

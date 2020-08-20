@@ -66,6 +66,11 @@
 #include "lprintf.h"
 #include "d_player.h"
 
+#include "KipSVN.h"				// Kippykip SVN Vars
+char * KIP_iwadChoice;			// KipSVN - Includes the global selected WAD
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
+
 #ifdef GL_DOOM
 #include "gl_struct.h"
 
@@ -247,8 +252,10 @@ static void I_GetEvent(SDL_Event *Event)
 static int mouse_currently_grabbed;
 */
 
-char weapons[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-int weapon_index = 0;
+//KipSVN What the eff?
+//char weapons[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+char weapons[7] = { '1', '2', '3', '4', '5', '6', '7'};
+int weapon_index = 1;
 bool weapon_shotgun_cycled = false;
 
 void AM_ZoomOut();
@@ -260,12 +267,15 @@ void DS_Controls(void) {
 	scanKeys();	// Do DS input housekeeping
 	u16 keys = keysDown();
 	u16 held = keysHeld();
+	
+	//if(paused)
+	//paused = false;
 
 	if (held & KEY_TOUCH) {
 		touchRead(&touch);
 	}
 	
-	if (held & KEY_B) {
+	if (held & KEY_SELECT) {
 		if (held & KEY_L) {
 			AM_ZoomIn();
 		}
@@ -274,7 +284,7 @@ void DS_Controls(void) {
 		}
 	}
 
-	if (keys & KEY_UP || ((held & KEY_TOUCH) && touch.py < 80))
+	if (keys & KEY_UP)// || ((held & KEY_TOUCH) && touch.py < 80))
 	{
 		event_t event;
 		event.type = ev_keydown;
@@ -290,7 +300,7 @@ void DS_Controls(void) {
 		D_PostEvent(&event);
 	}
 	
-	if (keys & KEY_DOWN || ((held & KEY_TOUCH) && touch.py > 120))
+	if (keys & KEY_DOWN)//|| ((held & KEY_TOUCH) && touch.py > 120))
 	{
 		event_t event;
 		event.type = ev_keydown;
@@ -317,73 +327,148 @@ void DS_Controls(void) {
 	if (keys & KEY_SELECT) {
 		event_t event;
 		event.type = ev_keydown;
-		event.data1 = KEYD_ENTER;
+		event.data1 = KEYD_TAB;
 		D_PostEvent(&event);
 	}
 	
-	if (keys & KEY_A)
+	if (keys & KEY_Y)
 	{
-		event_t event;
-		event.type = ev_keydown;
-		if (menuactive) event.data1= KEYD_ENTER;
-		else event.data1 = KEYD_RCTRL;
-		D_PostEvent(&event);
+		if(!menuactive) 
+		{
+			event_t event;
+			event.type = ev_keydown;
+			//if (menuactive) event.data1= KEYD_ENTER;
+			event.data1 = KEYD_RCTRL;
+			D_PostEvent(&event);
+		}
 	}
 	
 	if (keys & KEY_B)
 	{
 		event_t event;
 		event.type = ev_keydown;
-		if(menuactive) event.data1 = KEYD_ESCAPE;
-		else event.data1 = ' ';
-		D_PostEvent(&event);
+		if(menuactive) 
+		{
+			event.data1 = KEYD_ESCAPE;
+			D_PostEvent(&event);
+		}else
+		{ 
+			event.data1 = KEYD_RSHIFT;
+			D_PostEvent(&event);
+			event.data1 = ' ';
+			D_PostEvent(&event);
+		}
 	}
 	
 	if (keys & KEY_X)
 	{
 		event_t event;
-		event.type = ev_keydown;
-		event.data1 = KEYD_RSHIFT;
-		D_PostEvent(&event);
-	}
-	
-	if (keys & KEY_Y)
-	{
-		bool good = false;
-		
-		while (!good)
+		event.type = ev_keydown;	
+		int endlessfix = 0; // KipSVN - Fix so it doesn't freeze at an infinite loop
+		if (!menuactive) 
 		{
-			// Jefklak 23/11/06 - regular shotgun in DOOMII please
-			if(gamemission == doom2 && weapon_index == 2)
+			bool good = false;
+		
+			while (!good)
 			{
-				if(!weapon_shotgun_cycled)
-					weapon_shotgun_cycled = true;
-				else
+				// Jefklak 23/11/06 - regular shotgun in DOOMII please
+				if (weapon_index > 0)
 				{
-					weapon_index++;
-					weapon_shotgun_cycled = true;
+					if(!gamemission == doom && weapon_index == 2)
+					{
+						if(!weapon_shotgun_cycled)
+							weapon_shotgun_cycled = true;
+						else
+						{
+							weapon_index--;
+							weapon_shotgun_cycled = true;
+						}
+					}
+					else
+					{
+						weapon_index--;
+						weapon_shotgun_cycled = false;
+					}
+				}
+				//weapon_index++;
+				printf(weapon_index);
+				//if (weapon_index >= 7) weapon_index = 0;
+				if (weapon_index >= NUMWEAPONS) weapon_index = 6;
+				
+				if (players[displayplayer].weaponowned[weapon_index]) good = true;
+				endlessfix++;
+				if(endlessfix >= 10)
+				{
+					break;
 				}
 			}
-			else
-			{
-			weapon_index++;
-				weapon_shotgun_cycled = false;
+			if(endlessfix < 10)
+			{	
+				event.data1 = weapons[weapon_index];
+				D_PostEvent(&event);
 			}
-
-			if (weapon_index >= NUMWEAPONS) weapon_index = 0;
-			if (players[displayplayer].weaponowned[weapon_index]) good = true;
 		}
+	}
 	
+	if (keys & KEY_A)
+	{
 		event_t event;
-		event.type = ev_keydown;
-		event.data1 = weapons[weapon_index];
-		D_PostEvent(&event);
-		event.data1 = 'y';
-		D_PostEvent(&event);
+		event.type = ev_keydown;	
+		int endlessfix = 0;
+		if (menuactive) 
+		{
+			event.data1 = KEYD_ENTER;
+			D_PostEvent(&event);
+		}else
+		{	
+			bool good = false;
+		
+			while (!good)
+			{
+				// Jefklak 23/11/06 - regular shotgun in DOOMII please
+				if (weapon_index < 7)
+				{
+					if(!gamemission == doom && weapon_index == 2)
+					{
+						if(!weapon_shotgun_cycled)
+							weapon_shotgun_cycled = true;
+						else
+						{
+							weapon_index++;
+							weapon_shotgun_cycled = true;
+						}
+					}
+					else
+					{
+						weapon_index++;
+						weapon_shotgun_cycled = false;
+					}
+				}
+				//weapon_index++;
+				//printf(weapon_index);
+				if (weapon_index >= 7) weapon_index = 0;
+				if (weapon_index >= NUMWEAPONS) weapon_index = 1;
+				
+				if (players[displayplayer].weaponowned[weapon_index]) good = true;
+				endlessfix++;
+				if(endlessfix >= 10)
+				{
+					break;
+				}
+			}
+			if(endlessfix < 10)
+			{	
+				event.data1 = weapons[weapon_index];
+				D_PostEvent(&event);
+			}
+		}
+			
+		//event.data1 = 'y';
+		//D_PostEvent(&event);
 	}
 	
 	if (keys & KEY_R) {
-		if (!(held & KEY_B)) {
+		if (!(held & KEY_SELECT)) {
 			event_t event;
 			event.type = ev_keydown;
 			event.data1 = '.';
@@ -393,7 +478,7 @@ void DS_Controls(void) {
 	
 	if (keys & KEY_L)
 	{
-		if (!(held & KEY_B)) {
+		if (!(held & KEY_SELECT)) {
 			event_t event;
 			event.type = ev_keydown;
 			event.data1 = ',';
@@ -403,7 +488,7 @@ void DS_Controls(void) {
 	
 	keys = keysUp();
 	
-	if (keys & KEY_UP || (keys & KEY_TOUCH) || ((held & KEY_TOUCH) && touch.py >= 80))
+	if (keys & KEY_UP)// || (keys & KEY_TOUCH) || ((held & KEY_TOUCH) && touch.py >= 80))
 	{
 		event_t event;
 		event.type = ev_keyup;
@@ -419,7 +504,7 @@ void DS_Controls(void) {
 		D_PostEvent(&event);
 	}
 	
-	if (keys & KEY_DOWN || (keys & KEY_TOUCH) || ((held & KEY_TOUCH) && touch.py <= 120))
+	if (keys & KEY_DOWN) //|| (keys & KEY_TOUCH) || ((held & KEY_TOUCH) && touch.py <= 120))
 	{
 		event_t event;
 		event.type = ev_keyup;
@@ -447,11 +532,49 @@ void DS_Controls(void) {
 	{
 		event_t event;
 		event.type = ev_keyup;
-		event.data1 = KEYD_ENTER;
+		event.data1 = KEYD_TAB;
+		D_PostEvent(&event);
+	}
+	
+	if (keys & KEY_B)
+	{
+		event_t event;
+		event.type = ev_keyup;
+		event.data1 = KEYD_RSHIFT;
+		D_PostEvent(&event);
+		event.data1 = ' ';
+		D_PostEvent(&event);
+		event.data1 = KEYD_ESCAPE;
+		D_PostEvent(&event);
+	}
+	
+	if (keys & KEY_Y)
+	{
+		event_t event;
+		event.type = ev_keyup;
+		event.data1 = KEYD_RCTRL;
 		D_PostEvent(&event);
 	}
 	
 	if (keys & KEY_A)
+	{
+		event_t event;
+		event.type = ev_keyup;
+		event.data1 = weapons[weapon_index];
+		D_PostEvent(&event);
+		event.data1 = KEYD_ENTER;
+		D_PostEvent(&event);
+	}
+	
+	if (keys & KEY_X)
+	{
+		event_t event;
+		event.type = ev_keyup;
+		event.data1 = weapons[weapon_index];
+		D_PostEvent(&event);
+	}
+	
+	/*if (keys & KEY_A)
 	{
 		event_t event;
 		event.type = ev_keyup;
@@ -467,7 +590,7 @@ void DS_Controls(void) {
 		D_PostEvent(&event);
 	}
 	
-	if (keys & KEY_X)
+	if (keys & KEY_Y)
 	{
 		event_t event;
 		event.type = ev_keyup;
@@ -475,15 +598,15 @@ void DS_Controls(void) {
 		D_PostEvent(&event);
 	}
 	
-	if (keys & KEY_Y)
+	if (keys & KEY_X)
 	{
 		event_t event;
 		event.type = ev_keyup;
 		event.data1 = weapons[weapon_index];
 		D_PostEvent(&event);
-		event.data1 = 'y';
-		D_PostEvent(&event);
-	}
+		//event.data1 = 'y';
+		//D_PostEvent(&event);
+	}*/
 	
 	if (keys & KEY_R)
 	{
@@ -501,7 +624,7 @@ void DS_Controls(void) {
 		D_PostEvent(&event);
 	}
 	
-	if (keysHeld() & KEY_TOUCH) // this is only for x axis
+	/*if (keysHeld() & KEY_TOUCH) // this is only for x axis
 	{		
 		event_t event;
 		event.type = ev_mouse;
@@ -511,7 +634,7 @@ void DS_Controls(void) {
 		//event.data3 = (-(touch.py - 96) / 8) << 5;
 		event.data3 = (0) << 5;
 		D_PostEvent(&event);
-	}
+	}*/
 
 }
 
@@ -520,7 +643,6 @@ void DS_Controls(void) {
  * in DOOM II, regular shotgun added to weapon index pool
  **/
 extern int saveStringEnter;
-
 void I_StartTic (void) {
 	if(saveStringEnter) {
 		int key = keyboardUpdate();
@@ -681,8 +803,9 @@ void I_FinishUpdate (void)
   if (I_SkipFrame()) return;
 
 #ifndef GL_DOOM
-	int h = 200;
-	int w = 320;
+	// KipSVN Fixes here
+	int h = KIP_height;
+	int w = KIP_width;
 	int step = 512;
 	unsigned char *srcmain = screens[0];
 	unsigned char *srcsub = screens[1];
@@ -754,8 +877,11 @@ void I_PreInitGraphics(void)
 
 void I_SetRes(unsigned int width, unsigned int height)
 {
-  SCREENWIDTH = (width+3) & ~3;
-  SCREENHEIGHT = (height+3) & ~3;
+  // KipSVN - FORCE IT GAWD DAMN IT!
+  //SCREENWIDTH = (width+3) & ~3;
+  //SCREENHEIGHT = (height+3) & ~3;
+  SCREENWIDTH = KIP_width;
+  SCREENHEIGHT = KIP_height;
 
   lprintf(LO_INFO,"I_SetRes: Using resolution %dx%d\n", SCREENWIDTH, SCREENHEIGHT);
 }

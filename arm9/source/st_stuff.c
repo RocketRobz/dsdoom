@@ -409,6 +409,7 @@ void ST_refreshBackground(void)
 //  intercept cheats.
 boolean ST_Responder(event_t *ev)
 {
+//printf("STUFF");
   // Filter automap on/off.
   if (ev->type == ev_keyup && (ev->data1 & 0xffff0000) == AM_MSGHEADER)
     {
@@ -424,9 +425,9 @@ boolean ST_Responder(event_t *ev)
           break;
         }
     }
-//  else  // if a user keypress...
-//    if (ev->type == ev_keydown)       // Try cheat responder in m_cheat.c
-//      return M_FindCheats(ev->data1); // killough 4/17/98, 5/2/98
+  //else  // if a user keypress...
+    if (ev->type == ev_keydown)       // Try cheat responder in m_cheat.c
+      return M_FindCheats(ev->data1); // killough 4/17/98, 5/2/98
   return false;
 }
 
@@ -503,8 +504,12 @@ void ST_updateFaceWidget(void)
         {
           // being attacked
           priority = 7;
-
-          if (plyr->health - st_oldhealth > ST_MUCHPAIN)
+		  //KipSVN
+		  
+		  // haleyjd 10/12/03: classic DOOM problem of missing OUCH face
+          // was due to inversion of this test:
+          // if(plyr->health - st_oldhealth > ST_MUCHPAIN)
+          if(st_oldhealth - plyr->health > ST_MUCHPAIN)
             {
               st_facecount = ST_TURNCOUNT;
               st_faceindex = ST_calcPainOffset() + ST_OUCHOFFSET;
@@ -557,7 +562,12 @@ void ST_updateFaceWidget(void)
       // getting hurt because of your own damn stupidity
       if (plyr->damagecount)
         {
-          if (plyr->health - st_oldhealth > ST_MUCHPAIN)
+		  //KipSVN
+ 
+		  // haleyjd 10/12/03: classic DOOM problem of missing OUCH face
+          // was due to inversion of this test:
+          // if(plyr->health - st_oldhealth > ST_MUCHPAIN)
+          if(st_oldhealth - plyr->health > ST_MUCHPAIN)
             {
               priority = 7;
               st_facecount = ST_TURNCOUNT;

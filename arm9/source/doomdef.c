@@ -36,10 +36,16 @@
 #endif
 
 #include "doomdef.h"
+//#include "KipSVN.h"				// Kippykip SVN Vars
+//int KIP_width;					// KipSVN - Includes screen width
+//int KIP_height;					// KipSVN - Includes screen height
 
 // Location for any defines turned variables.
 // None.
 
 // proff 08/17/98: Changed for high-res
-int SCREENWIDTH=320;
-int SCREENHEIGHT=200;
+// KipSVN this gets changed somewhere else anyway
+int SCREENWIDTH;
+int SCREENHEIGHT;
+//int SCREENWIDTH=KIP_width;
+//int SCREENHEIGHT=KIP_height;

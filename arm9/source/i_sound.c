@@ -619,7 +619,9 @@ void I_InitMusic(void)
 
 void I_PlaySong(int handle, int looping)
 {
-#ifdef HAVE_MIXER
+printf(strcat("LOLIDK", handle));
+
+#ifdef HAVE_MIXER	
   if ( music[handle] ) {
     Mix_FadeInMusic(music[handle], looping ? -1 : 0, 500);
   }

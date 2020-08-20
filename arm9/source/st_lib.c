@@ -41,6 +41,7 @@
 int sts_always_red;      //jff 2/18/98 control to disable status color changes
 int sts_pct_always_gray; // killough 2/21/98: always gray %'s? bug or feature?
 int FG = 1;
+int screen = BG; //KipSVN :P
 
 //
 // STlib_init()
@@ -132,7 +133,7 @@ static void STlib_drawNum
     I_Error("STlib_drawNum: n->y - ST_Y < 0");
 #endif
 
-  V_CopyRect(x, n->y - ST_Y, BG, w*numdigits, h, x, n->y, FG, VPT_STRETCH);
+  V_CopyRect(x, n->y - ST_Y+1, screen, w*numdigits, h, x, n->y, FG, VPT_STRETCH);
 
   // if non-number, do not draw it
   if (num == 1994)
@@ -295,7 +296,7 @@ void STlib_updateMultIcon
         I_Error("STlib_updateMultIcon: y - ST_Y < 0");
 #endif
 
-      V_CopyRect(x, y-ST_Y, BG, w, h, x, y, FG, VPT_STRETCH);
+      V_CopyRect(x, y-ST_Y+1, screen, w, h, x, y, FG, VPT_STRETCH);
     }
     if (*mi->inum != -1)  // killough 2/16/98: redraw only if != -1
       V_DrawNumPatch(mi->x, mi->y, FG, mi->p[*mi->inum].lumpnum, CR_DEFAULT, VPT_STRETCH);
@@ -366,7 +367,7 @@ void STlib_updateBinIcon
     if (*bi->val)
       V_DrawNumPatch(bi->x, bi->y, FG, bi->p->lumpnum, CR_DEFAULT, VPT_STRETCH);
     else
-      V_CopyRect(x, y-ST_Y, BG, w, h, x, y, FG, VPT_STRETCH);
+      V_CopyRect(x, y-ST_Y+1, screen, w, h, x, y, FG, VPT_STRETCH);
 
     bi->oldval = *bi->val;
   }

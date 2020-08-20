@@ -41,6 +41,8 @@
 #include "m_random.h"
 #include "w_wad.h"
 #include "lprintf.h"
+#include "KipSVN.h"					// KipVN Vars
+int KIP_screenmode;					// KipSVN - Includes what sceen to run it in
 
 // when to clip out sounds
 // Does not fit the large outdoor areas.
@@ -146,12 +148,22 @@ void S_Init(int sfxVolume, int musicVolume)
   }
 
   // CPhipps - music init reformatted
-//  if (mus_card && !nomusicparm) {
-  //  S_SetMusicVolume(musicVolume);
-
+  if (mus_card && !nomusicparm) {
+    S_SetMusicVolume(musicVolume);
+	
+	//KipSVN MUSIC BRAH!!
+    adlib_init_hw();
+	mus_init_music();
+	if(KIP_screenmode > 0)
+	{
+		singleScreen(); //KIPSVN Single screen
+	}
+    //mus_test();
+	
     // no sounds are playing, and they are not mus_paused
- //   mus_paused = 0;
-  //}
+    mus_paused = 0;
+  }
+  
 }
 
 void S_Stop(void)
@@ -180,7 +192,7 @@ void S_Start(void)
   S_Stop();
 
   //jff 1/22/98 return if music is not enabled
-//  if (!mus_card || nomusicparm)
+  if (!mus_card || nomusicparm)
     return;
 
   // start new music for the level
@@ -343,7 +355,7 @@ void S_StopSound(void *origin)
 void S_PauseSound(void)
 {
   //jff 1/22/98 return if music is not enabled
-  //if (!mus_card || nomusicparm)
+  if (!mus_card || nomusicparm)
     return;
 
   if (mus_playing && !mus_paused)
@@ -356,7 +368,7 @@ void S_PauseSound(void)
 void S_ResumeSound(void)
 {
   //jff 1/22/98 return if music is not enabled
-  //if (!mus_card || nomusicparm)
+  if (!mus_card || nomusicparm)
     return;
 
   if (mus_playing && mus_paused)
@@ -431,7 +443,7 @@ void S_UpdateSounds(void* listener_p)
 void S_SetMusicVolume(int volume)
 {
   //jff 1/22/98 return if music is not enabled
-  //if (!mus_card || nomusicparm)
+  if (!mus_card || nomusicparm)
     return;
   if (volume < 0 || volume > 15)
     I_Error("S_SetMusicVolume: Attempt to set music volume at %d", volume);
@@ -459,9 +471,11 @@ void S_StartMusic(int m_id)
 {
 iprintf("Start the music man!\n");
   //jff 1/22/98 return if music is not enabled
-  //if (!mus_card || nomusicparm)
-    return;
-	iprintf("WE SHOULDN'T GET HERE nomusicparm=%d!\n", nomusicparm);
+  if (!mus_card || nomusicparm)
+    {
+		return;
+		iprintf("WE SHOULDN'T GET HERE nomusicparm=%d!\n", nomusicparm);
+	}
   S_ChangeMusic(m_id, false);
 }
 
@@ -469,68 +483,48 @@ iprintf("Start the music man!\n");
 
 void S_ChangeMusic(int musicnum, int looping)
 {
+  //KipSVN PLAY TEH MUSIX
+  //Thanks elhobbs!
+  char mus_name[9];
   musicinfo_t *music;
-  int music_file_failed; // cournia - if true load the default MIDI music
-  char* music_filename;  // cournia
-
-  //jff 1/22/98 return if music is not enabled
-  //if (!mus_card || nomusicparm)
-    return;
-
+ 
   if (musicnum <= mus_None || musicnum >= NUMMUSIC)
     I_Error("S_ChangeMusic: Bad music number %d", musicnum);
-
+ 
   music = &S_music[musicnum];
-
+ 
   if (mus_playing == music)
     return;
-
-  // shutdown old music
-  S_StopMusic();
-
-  // get lumpnum if neccessary
-  if (!music->lumpnum)
-    {
-      char namebuf[9];
-      sprintf(namebuf, "d_%s", music->name);
-      music->lumpnum = W_GetNumForName(namebuf);
-    }
-
-  music_file_failed = 1;
-
-  // proff_fs - only load when from IWAD
-  if (lumpinfo[music->lumpnum].source == source_iwad)
-    {
-      // cournia - check to see if we can play a higher quality music file
-      //           rather than the default MIDI
-      music_filename = I_FindFile(S_music_files[musicnum], "");
-      if (music_filename)
-        {
-          music_file_failed = I_RegisterMusic(music_filename, music);
-          free(music_filename);
-        }
-    }
-
-  if (music_file_failed)
-    {
-      //cournia - could not load music file, play default MIDI music
-
-      // load & register it
-      music->data = W_CacheLumpNum(music->lumpnum);
-      music->handle = I_RegisterSong(music->data, W_LumpLength(music->lumpnum));
-    }
-
-  // play it
-  I_PlaySong(music->handle, looping);
-
+  printf("S_ChangeMusic: d_%s\n", music->name);
+  sprintf(mus_name, "d_%s", music->name);
+  int mus_data = W_CacheLumpName(mus_name);
+  mus_play_music(mus_data);
+ 
   mus_playing = music;
+  
+  
+  //I_PlaySong(music->handle, looping);
+  
+  //char * mus_name = S_music[musicnum].name;
+  //char * mus_filename = "d_";
+  //sprintf(mus_filename, "d_%s", mus_name);
+  
+ // printf(mus_filename);
+ // mus_init_music();
+  //int song = W_CacheLumpName();
+  
+  //int song = W_CacheLumpName(music);
+  //mus_play_music(song);
+  
+  //W_UnlockLumpName(song);
+  //mus_playing = music;
 }
 
 
 void S_StopMusic(void)
 {
   //jff 1/22/98 return if music is not enabled
-  //if (!mus_card || nomusicparm)
+  if (!mus_card || nomusicparm)
     return;
 
   if (mus_playing)

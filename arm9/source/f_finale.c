@@ -38,6 +38,9 @@
 #include "sounds.h"
 #include "d_deh.h"  // Ty 03/22/98 - externalizations
 #include "f_finale.h" // CPhipps - hmm...
+#include "KipSVN.h"				// Kippykip SVN Vars
+int KIP_width;					// KipSVN - Includes screen width
+int KIP_height;					// KipSVN - Includes screen height
 
 // Stage of animation:
 //  0 = text, 1 = art screen, 2 = character cast
@@ -591,21 +594,21 @@ static void F_BunnyScroll (void)
   char        name[10];
   int         stage;
   static int  laststage;
-
-  {
-    int scrolled = 320 - (finalecount-230)/2;
+   //KipSVN lets fix dis up mkai
+    {
+    int scrolled = KIP_width - (finalecount-230)/2;
     if (scrolled <= 0) {
       V_DrawNamePatch(0, 0, 0, pfub2, CR_DEFAULT, VPT_STRETCH);
-    } else if (scrolled >= 320) {
+    } else if (scrolled >= KIP_width) {
       V_DrawNamePatch(0, 0, 0, pfub1, CR_DEFAULT, VPT_STRETCH);
     } else {
 #define SCRN 2
 
 #ifdef GL_DOOM
-      V_DrawNamePatch(320-scrolled, 0, SCRN, pfub1, CR_DEFAULT, VPT_STRETCH);
+      V_DrawNamePatch(KIP_width-scrolled, 0, SCRN, pfub1, CR_DEFAULT, VPT_STRETCH);
       V_DrawNamePatch(-scrolled, 0, SCRN, pfub2, CR_DEFAULT, VPT_STRETCH);
 #else
-      int realscrolled = (SCREENWIDTH * scrolled) / 320;
+      int realscrolled = (SCREENWIDTH * scrolled) / KIP_width;
 
       V_AllocScreen(SCRN);
       V_DrawNamePatch(0, 0, SCRN, pfub2, CR_DEFAULT, VPT_STRETCH);
@@ -616,13 +619,14 @@ static void F_BunnyScroll (void)
 #endif
     }
   }
+  
 
   if (finalecount < 1130)
     return;
   if (finalecount < 1180)
   {
     // CPhipps - patch drawing updated
-    V_DrawNamePatch((320-13*8)/2, (200-8*8)/2,0, "END0", CR_DEFAULT, VPT_STRETCH);
+    V_DrawNamePatch((KIP_width-13*8)/2, (KIP_height-8*8)/2,0, "END0", CR_DEFAULT, VPT_STRETCH);
     laststage = 0;
     return;
   }
@@ -638,7 +642,7 @@ static void F_BunnyScroll (void)
 
   sprintf (name,"END%i",stage);
   // CPhipps - patch drawing updated
-  V_DrawNamePatch((320-13*8)/2, (200-8*8)/2, 0, name, CR_DEFAULT, VPT_STRETCH);
+  V_DrawNamePatch((KIP_width-13*8)/2, (KIP_height-8*8)/2, 0, name, CR_DEFAULT, VPT_STRETCH);
 }
 
 
